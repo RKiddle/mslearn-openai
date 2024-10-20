@@ -6,7 +6,8 @@ using Microsoft.Extensions.Configuration.Json;
 using Azure;
 
 // Add Azure OpenAI package
-
+ // Add Azure OpenAI package
+ using Azure.AI.OpenAI;
 
 // Build a config object and retrieve user settings.
 IConfiguration config = new ConfigurationBuilder()
@@ -23,7 +24,17 @@ if(string.IsNullOrEmpty(oaiEndpoint) || string.IsNullOrEmpty(oaiKey) || string.I
 }
 
 // Initialize the Azure OpenAI client...
+ // Initialize the Azure OpenAI client
+ OpenAIClient client = new OpenAIClient(new Uri(oaiEndpoint), new AzureKeyCredential(oaiKey));
+    
+ // System message to provide context to the model
+ string systemMessage = "I am a hiking enthusiast named Forest who helps people discover hikes in their area. If no area is specified, I will default to near Rainier National Park. I will then provide three suggestions for nearby hikes that vary in length. I will also share an interesting fact about the local nature on the hikes when making a recommendation.";
 
+ // Initialize messages list
+ var messagesList = new List<ChatRequestMessage>()
+ {
+     new ChatRequestSystemMessage(systemMessage),
+ };
 
 
 do {
@@ -40,6 +51,35 @@ do {
     Console.WriteLine("\nSending request for summary to Azure OpenAI endpoint...\n\n");
 
     // Add code to send request...
+        // Add code to send request...
+        // Build completion options object
+        messagesList.Add(new ChatRequestUserMessage(inputText));
+
+    ChatCompletionsOptions chatCompletionsOptions = new ChatCompletionsOptions()
+    {
+        MaxTokens = 1200,
+        Temperature = 0.7f,
+        DeploymentName = oaiDeploymentName
+    };
+
+    // Add messages to the completion options
+    foreach (ChatRequestMessage chatMessage in messagesList)
+    {
+        chatCompletionsOptions.Messages.Add(chatMessage);
+    }
+
+    // Send request to Azure OpenAI model
+    ChatCompletions response = client.GetChatCompletions(chatCompletionsOptions);
+
+    // Return the response
+    string completion = response.Choices[0].Message.Content;
+
+    // Add generated text to messages list
+    messagesList.Add(new ChatRequestAssistantMessage(completion));
+
+    Console.WriteLine("Response: " + completion + "\n");
+        
+
 
 
 
