@@ -1,3 +1,6 @@
 bin
 obj
 Labfiles/02-azure-openai-api/CSharp/appsettings.json
+
+.fake
+Labfiles/03-prompt-engineering/CSharp/appsettings.json
