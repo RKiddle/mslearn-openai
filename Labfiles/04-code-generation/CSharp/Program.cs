@@ -69,6 +69,25 @@ async Task GetResponseFromOpenAI(string prompt)
     string userPrompt = prompt;
 
     // Format and send the request to the model
+    // Format and send the request to the model
+    var chatCompletionsOptions = new ChatCompletionsOptions()
+    {
+        Messages =
+        {
+            new ChatRequestSystemMessage(systemPrompt),
+            new ChatRequestUserMessage(userPrompt)
+        },
+        Temperature = 0.7f,
+        MaxTokens = 1000,
+        DeploymentName = oaiDeploymentName
+    };
+
+    // Get response from Azure OpenAI
+    Response<ChatCompletions> response = await client.GetChatCompletionsAsync(chatCompletionsOptions);
+
+    ChatCompletions completions = response.Value;
+    string completion = completions.Choices[0].Message.Content;
+
 
 
     // Write full response to console, if requested
