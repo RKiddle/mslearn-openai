@@ -1,0 +1,682 @@
+Got it! Let's set this up for your C# app:
+
+1. **Deploy a GPT-35-turbo-16k model in Azure OpenAI**:
+   - Ensure it's deployed in the same region as the `RG1lod45063671` resource group.
+
+2. **Configure the settings file**:
+   - Store connection strings in a settings file (e.g., `appsettings.json`).
+
+3. **Configure Client Settings in `Main`**:
+   - Update `Main` to read from the settings file and configure the client.
+
+4. **Configure Functions**:
+   - Set up the messages, API parameters, and call the chat completion connection.
+   - Validate the response using the sample text prompt file.
+
+Here's a rough outline of how you can do this in C#:
+
+1. **appsettings.json**:
+```json
+{
+  "AzureOpenAI": {
+    "Endpoint": "https://<your-openai-endpoint>.azure.com/",
+    "Key": "<your-api-key>"
+  }
+}
+```
+
+2. **Program.cs**:
+```csharp
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AzureOpenAIPoC
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            string endpoint = config["AzureOpenAI:Endpoint"];
+            string key = config["AzureOpenAI:Key"];
+
+            var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+
+            string prompt = File.ReadAllText("sample_text_prompt.txt");
+            await GetChatCompletionAsync(client, prompt);
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        static async Task GetChatCompletionAsync(OpenAIClient client, string prompt)
+        {
+            var options = new ChatCompletionOptions()
+            {
+                Messages =
+                {
+                    new ChatMessage(ChatRole.System, "You are a helpful assistant."),
+                    new ChatMessage(ChatRole.User, prompt)
+                },
+                MaxTokens = 1000,
+                Temperature = 0.7
+            };
+
+            var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);
+
+            if (response != null && response.Choices.Count > 0)
+            {
+                Console.WriteLine("Response:");
+                foreach (var choice in response.Choices)
+                {
+                    Console.WriteLine(choice.Message.Content);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No response received.");
+            }
+        }
+    }
+}
+```
+
+**Steps Summary**:
+- **appsettings.json** stores the endpoint and key.
+- **Program.cs** reads the settings, sets up the client, and makes the API call.
+- The `GetChatCompletionAsync` function sends a prompt and prints the response.
+
+Make sure to replace the placeholders with your actual endpoint and API key. Test with your sample text prompt file to ensure it works.
+
+Happy coding! 🚀
+
+Absolutely! Let's break down the `Program.cs` file line by line. Here is the original code for reference:
+
+```csharp
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AzureOpenAIPoC
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            string endpoint = config["AzureOpenAI:Endpoint"];
+            string key = config["AzureOpenAI:Key"];
+
+            var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+
+            string prompt = File.ReadAllText("sample_text_prompt.txt");
+            await GetChatCompletionAsync(client, prompt);
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        static async Task GetChatCompletionAsync(OpenAIClient client, string prompt)
+        {
+            var options = new ChatCompletionOptions()
+            {
+                Messages =
+                {
+                    new ChatMessage(ChatRole.System, "You are a helpful assistant."),
+                    new ChatMessage(ChatRole.User, prompt)
+                },
+                MaxTokens = 1000,
+                Temperature = 0.7
+            };
+
+            var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);
+
+            if (response != null && response.Choices.Count > 0)
+            {
+                Console.WriteLine("Response:");
+                foreach (var choice in response.Choices)
+                {
+                    Console.WriteLine(choice.Message.Content);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No response received.");
+            }
+        }
+    }
+}
+```
+
+### Line-by-Line Explanation:
+
+1. `using Azure;`
+   - Imports the `Azure` namespace which contains basic Azure SDK classes.
+
+2. `using Azure.AI.OpenAI;`
+   - Imports the `Azure.AI.OpenAI` namespace for interacting with the Azure OpenAI service.
+
+3. `using Microsoft.Extensions.Configuration;`
+   - Imports the `Microsoft.Extensions.Configuration` namespace to handle configuration settings.
+
+4. `using System;`
+   - Imports basic system functionality like input-output operations and data conversion.
+
+5. `using System.IO;`
+   - Provides functionality to read from and write to files and data streams.
+
+6. `using System.Threading.Tasks;`
+   - Provides support for asynchronous programming.
+
+7. `namespace AzureOpenAIPoC`
+   - Defines a namespace to organize code and avoid naming conflicts.
+
+8. `class Program`
+   - Declares a class named `Program`.
+
+9. `static async Task Main(string[] args)`
+   - The main entry point of the program. Marked as `async` to allow asynchronous operations.
+
+10. `var config = new ConfigurationBuilder()`
+    - Creates a configuration builder object.
+
+11. `.SetBasePath(Directory.GetCurrentDirectory())`
+    - Sets the base path to the current directory of the executable.
+
+12. `.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)`
+    - Adds `appsettings.json` as a configuration source. The file is required (`optional: false`) and will be reloaded if it changes (`reloadOnChange: true`).
+
+13. `.Build();`
+    - Builds the configuration.
+
+14. `string endpoint = config["AzureOpenAI:Endpoint"];`
+    - Retrieves the `Endpoint` setting from the configuration.
+
+15. `string key = config["AzureOpenAI:Key"];`
+    - Retrieves the `Key` setting from the configuration.
+
+16. `var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));`
+    - Initializes a new instance of `OpenAIClient` using the endpoint and key.
+
+17. `string prompt = File.ReadAllText("sample_text_prompt.txt");`
+    - Reads the contents of `sample_text_prompt.txt` into a string.
+
+18. `await GetChatCompletionAsync(client, prompt);`
+    - Calls the `GetChatCompletionAsync` method, passing the `client` and `prompt`.
+
+19. `Console.Write("Press any key to exit.");`
+    - Writes a message to the console.
+
+20. `Console.ReadKey();`
+    - Waits for a key press before exiting the program.
+
+21. `static async Task GetChatCompletionAsync(OpenAIClient client, string prompt)`
+    - Declares an asynchronous method to get chat completions.
+
+22. `var options = new ChatCompletionOptions()`
+    - Initializes a new `ChatCompletionOptions` object.
+
+23. `{`
+    - Start of the `ChatCompletionOptions` object initialization block.
+
+24. `Messages =`
+    - Sets the `Messages` property.
+
+25. `{`
+    - Start of the `Messages` initialization block.
+
+26. `new ChatMessage(ChatRole.System, "You are a helpful assistant."),`
+    - Adds a system message to define the assistant's role.
+
+27. `new ChatMessage(ChatRole.User, prompt)`
+    - Adds a user message containing the `prompt`.
+
+28. `},`
+    - End of the `Messages` initialization block.
+
+29. `MaxTokens = 1000,`
+    - Sets the maximum number of tokens for the response.
+
+30. `Temperature = 0.7`
+    - Sets the temperature for controlling response randomness.
+
+31. `};`
+    - End of the `ChatCompletionOptions` object initialization block.
+
+32. `var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);`
+    - Calls the `GetChatCompletionsAsync` method to get chat completions.
+
+33. `if (response != null && response.Choices.Count > 0)`
+    - Checks if a valid response with choices is received.
+
+34. `{`
+    - Start of the if-statement block.
+
+35. `Console.WriteLine("Response:");`
+    - Writes "Response:" to the console.
+
+36. `foreach (var choice in response.Choices)`
+    - Iterates over each choice in the response.
+
+37. `{`
+    - Start of the foreach loop block.
+
+38. `Console.WriteLine(choice.Message.Content);`
+    - Writes the content of each choice to the console.
+
+39. `}`
+    - End of the foreach loop block.
+
+40. `}`
+    - End of the if-statement block.
+
+41. `else`
+    - Else block for the if-statement.
+
+42. `{`
+    - Start of the else block.
+
+43. `Console.WriteLine("No response received.");`
+    - Writes "No response received." to the console.
+
+44. `}`
+    - End of the else block.
+
+45. `}`
+    - End of the `GetChatCompletionAsync` method.
+
+46. `}`
+    - End of the `Program` class.
+
+
+Sure, let's develop the PoC app further by modifying `function2()`. Here are the detailed steps:
+
+1. **Ensure each response is in a casual tone and ends with "Hope that helps! Thanks for using Contoso, Ltd."**.
+2. **Limit responses to 1,000 tokens and set the temperature to 0.5**.
+3. **Provide an example with the prompt**.
+4. **Use prompt engineering to get responses in both English and Spanish for a specific question**.
+
+Here’s an updated version of your C# `Program.cs`:
+
+```csharp
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AzureOpenAIPoC
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            string endpoint = config["AzureOpenAI:Endpoint"];
+            string key = config["AzureOpenAI:Key"];
+
+            var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+
+            string prompt = "What is the best way to find if a company is hiring?";
+            await Function2(client, prompt);
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        static async Task Function2(OpenAIClient client, string prompt)
+        {
+            var options = new ChatCompletionOptions()
+            {
+                Messages =
+                {
+                    new ChatMessage(ChatRole.System, "You are a helpful assistant. Respond in a casual tone."),
+                    new ChatMessage(ChatRole.User, prompt)
+                },
+                MaxTokens = 1000,
+                Temperature = 0.5
+            };
+
+            var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);
+
+            if (response != null && response.Choices.Count > 0)
+            {
+                Console.WriteLine("Response:");
+                foreach (var choice in response.Choices)
+                {
+                    string completion = choice.Message.Content;
+                    completion += " Hope that helps! Thanks for using Contoso, Ltd.";
+                    Console.WriteLine(completion);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No response received.");
+            }
+        }
+    }
+}
+```
+
+**Explanation:**
+
+1. **Configuration**: Reads from `appsettings.json` to get the endpoint and API key.
+2. **Main Method**: Sets up the client and calls `Function2` with a sample prompt.
+3. **Function2 Method**: 
+   - Configures the `ChatCompletionOptions` with a casual tone, max tokens, and temperature.
+   - Calls `GetChatCompletionsAsync` to get the response.
+   - Appends the specified ending to each response.
+
+**Example Usage**:
+- **Prompt**: "Where can I find the company phone number?"
+- **Response**: "You can find it on the footer of every page on our website. Hope that helps! Thanks for using Contoso, Ltd."
+
+**Prompt Engineering for English and Spanish**:
+- **Prompt**: "What is the best way to find if a company is hiring?"
+
+Adjust the prompt within the `Function2` method to include instructions for both English and Spanish:
+
+```csharp
+var options = new ChatCompletionOptions()
+{
+    Messages =
+    {
+        new ChatMessage(ChatRole.System, "You are a helpful assistant. Respond in a casual tone."),
+        new ChatMessage(ChatRole.User, "What is the best way to find if a company is hiring? Please answer in both English and Spanish.")
+    },
+    MaxTokens = 1000,
+    Temperature = 0.5
+};
+```
+
+With these changes, the app should now respond in a casual tone, provide responses within the token limit, set the desired temperature, and ensure responses end with "Hope that helps! Thanks for using Contoso, Ltd."
+
+Let me know if you need any further adjustments or additional features! 🌟
+
+I hope this breakdown helps you understand each part of the code! If you have any more questions or need further clarification, feel free to ask. 🚀
+
+Sure, let's develop the PoC app further by modifying `function2()`. Here are the detailed steps:
+
+1. **Ensure each response is in a casual tone and ends with "Hope that helps! Thanks for using Contoso, Ltd."**.
+2. **Limit responses to 1,000 tokens and set the temperature to 0.5**.
+3. **Provide an example with the prompt**.
+4. **Use prompt engineering to get responses in both English and Spanish for a specific question**.
+
+Here’s an updated version of your C# `Program.cs`:
+
+```csharp
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AzureOpenAIPoC
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            string endpoint = config["AzureOpenAI:Endpoint"];
+            string key = config["AzureOpenAI:Key"];
+
+            var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+
+            string prompt = "What is the best way to find if a company is hiring?";
+            await Function2(client, prompt);
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        static async Task Function2(OpenAIClient client, string prompt)
+        {
+            var options = new ChatCompletionOptions()
+            {
+                Messages =
+                {
+                    new ChatMessage(ChatRole.System, "You are a helpful assistant. Respond in a casual tone."),
+                    new ChatMessage(ChatRole.User, prompt)
+                },
+                MaxTokens = 1000,
+                Temperature = 0.5
+            };
+
+            var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);
+
+            if (response != null && response.Choices.Count > 0)
+            {
+                Console.WriteLine("Response:");
+                foreach (var choice in response.Choices)
+                {
+                    string completion = choice.Message.Content;
+                    completion += " Hope that helps! Thanks for using Contoso, Ltd.";
+                    Console.WriteLine(completion);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No response received.");
+            }
+        }
+    }
+}
+```
+
+**Explanation:**
+
+1. **Configuration**: Reads from `appsettings.json` to get the endpoint and API key.
+2. **Main Method**: Sets up the client and calls `Function2` with a sample prompt.
+3. **Function2 Method**: 
+   - Configures the `ChatCompletionOptions` with a casual tone, max tokens, and temperature.
+   - Calls `GetChatCompletionsAsync` to get the response.
+   - Appends the specified ending to each response.
+
+**Example Usage**:
+- **Prompt**: "Where can I find the company phone number?"
+- **Response**: "You can find it on the footer of every page on our website. Hope that helps! Thanks for using Contoso, Ltd."
+
+**Prompt Engineering for English and Spanish**:
+- **Prompt**: "What is the best way to find if a company is hiring?"
+
+Adjust the prompt within the `Function2` method to include instructions for both English and Spanish:
+
+```csharp
+var options = new ChatCompletionOptions()
+{
+    Messages =
+    {
+        new ChatMessage(ChatRole.System, "You are a helpful assistant. Respond in a casual tone."),
+        new ChatMessage(ChatRole.User, "What is the best way to find if a company is hiring? Please answer in both English and Spanish.")
+    },
+    MaxTokens = 1000,
+    Temperature = 0.5
+};
+```
+
+With these changes, the app should now respond in a casual tone, provide responses within the token limit, set the desired temperature, and ensure responses end with "Hope that helps! Thanks for using Contoso, Ltd."
+
+Let me know if you need any further adjustments or additional features! 🌟
+
+Absolutely! Let’s get this setup done. Here’s how you can modify `function3()` to complete the required tasks and submit code generation requests to Azure OpenAI using `sample-text.txt`.
+
+### Steps:
+
+1. **Take the legacy code in `legacyCode.py`, add comments, and generate documentation.**
+2. **Generate five unit tests for the function in `fibonacci.py`.**
+3. **Modify `function3()` to submit individual code generation requests for each task.**
+4. **Use `sample-text.txt` to accomplish each task.**
+
+Let’s start with the structure of your `Program.cs` and `function3()`.
+
+### Example `legacyCode.py`
+
+Here is a sample legacy Python code that we'll use:
+
+```python
+def process_data(data):
+    result = []
+    for item in data:
+        processed_item = item * 2  # Placeholder for actual processing logic
+        result.append(processed_item)
+    return result
+```
+
+### Example `fibonacci.py`
+
+Sample function for generating Fibonacci numbers:
+
+```python
+def fibonacci(n):
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    elif n == 2:
+        return [0, 1]
+    
+    fib_sequence = [0, 1]
+    for i in range(2, n):
+        fib_sequence.append(fib_sequence[-1] + fib_sequence[-2])
+    return fib_sequence
+```
+
+### Modify `function3()`
+
+```csharp
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace AzureOpenAIPoC
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            string endpoint = config["AzureOpenAI:Endpoint"];
+            string key = config["AzureOpenAI:Key"];
+
+            var client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+
+            string sampleText = File.ReadAllText("sample-text.txt");
+            await Function3(client, sampleText);
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        static async Task Function3(OpenAIClient client, string sampleText)
+        {
+            string[] tasks = new string[]
+            {
+                "Add comments and generate documentation for legacyCode.py",
+                "Generate five unit tests for the function in fibonacci.py"
+            };
+
+            foreach (var task in tasks)
+            {
+                var options = new ChatCompletionOptions()
+                {
+                    Messages =
+                    {
+                        new ChatMessage(ChatRole.System, "You are a coding assistant."),
+                        new ChatMessage(ChatRole.User, $"Task: {task}\nSample Text: {sampleText}")
+                    },
+                    MaxTokens = 1000,
+                    Temperature = 0.7
+                };
+
+                var response = await client.GetChatCompletionsAsync("GPT-35-turbo-16k", options);
+
+                if (response != null && response.Choices.Count > 0)
+                {
+                    Console.WriteLine("Response:");
+                    foreach (var choice in response.Choices)
+                    {
+                        Console.WriteLine(choice.Message.Content);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No response received.");
+                }
+            }
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Main Method**:
+   - Reads from `appsettings.json` to get the endpoint and key.
+   - Calls `Function3` with the content of `sample-text.txt`.
+
+2. **Function3**:
+   - Contains tasks to modify `legacyCode.py` and generate unit tests for `fibonacci.py`.
+   - For each task, sets up a `ChatCompletionOptions` object and sends a request to Azure OpenAI.
+   - Prints the response.
+
+### Sample Text for `sample-text.txt`
+
+Make sure your `sample-text.txt` includes relevant context or code snippets that the model can use for the tasks.
+
+Example content:
+```txt
+def process_data(data):
+    result = []
+    for item in data:
+        processed_item = item * 2  # Placeholder for actual processing logic
+        result.append(processed_item)
+    return result
+
+def fibonacci(n):
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    elif n == 2:
+        return [0, 1]
+
+    fib_sequence = [0, 1]
+    for i in range(2, n):
+        fib_sequence.append(fib_sequence[-1] + fib_sequence[-2])
+    return fib_sequence
+```
+
+Now your app can submit individual code generation requests for each task using Azure OpenAI. Give it a try and let me know how it works! 🚀
